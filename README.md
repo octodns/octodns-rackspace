@@ -1,6 +1,4 @@
-TODO: Review this README and add or modify as necessary.
-
-## Rackspace DNS provider for octoDNS
+## Rackspace DNS v1 API provider for octoDNS
 
 An [octoDNS](https://github.com/octodns/octodns/) provider that targets [Rackspace DNS](https://www.rackspace.com/library/what-is-dns).
 
@@ -38,21 +36,22 @@ octodns_rackspace==0.0.1
 providers:
   rackspace:
     class: octodns_rackspace.RackspaceProvider
-    # TODO
+    # The the username to authenticate with (required)
+    username: env/RACKSPACE_USERNAME
+    # The api key that grants access for that user (required)
+    api_key: env/RACKSPACE_API_KEY
 ```
 
 ### Support Information
 
 #### Records
 
-TODO: All octoDNS record types are supported.
+RackspaceProvider supports A, AAAA, ALIAS, CNAME, MX, NS, PTR, SPF, and TXT
 
 #### Dynamic
 
-TODO: RackspaceProvider does not support dynamic records.
+RackspaceProvider does not support dynamic records.
 
 ### Development
 
 See the [/script/](/script/) directory for some tools to help with the development process. They generally follow the [Script to rule them all](https://github.com/github/scripts-to-rule-them-all) pattern. Most useful is `./script/bootstrap` which will create a venv and install both the runtime and development related requirements. It will also hook up a pre-commit hook that covers most of what's run by CI.
-
-TODO: any provider specific setup, a docker compose to run things locally etc?
