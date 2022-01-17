@@ -346,7 +346,7 @@ class TestRackspaceProvider(TestCase):
                         'type': 'MX',
                         'ttl': 300,
                         'value': {
-                            'value': 'mail1.example.com.',
+                            'exchange': 'mail1.example.com.',
                             'priority': 1,
                         }
                     }
@@ -357,7 +357,7 @@ class TestRackspaceProvider(TestCase):
                         'type': 'MX',
                         'ttl': 300,
                         'value': {
-                            'value': 'mail2.example.com.',
+                            'exchange': 'mail2.example.com.',
                             'priority': 2
                         }
                     }
@@ -719,7 +719,7 @@ class TestRackspaceProvider(TestCase):
                     "data": {
                         'type': 'MX',
                         'ttl': 300,
-                        'value': {u'priority': 50, u'value': 'mx.test.com.'}
+                        'value': {u'priority': 50, u'exchange': 'mx.test.com.'}
                     }
                 }
             ]
