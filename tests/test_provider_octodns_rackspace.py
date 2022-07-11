@@ -39,8 +39,9 @@ class TestRackspaceProvider(TestCase):
     def setUp(self):
         with requests_mock() as mock:
             mock.post(ANY, status_code=200, text=AUTH_RESPONSE)
-            self.provider = RackspaceProvider('identity', 'test', 'api-key',
-                                              '0')
+            self.provider = RackspaceProvider(
+                'identity', 'test', 'api-key', '0'
+            )
             self.assertTrue(mock.called_once)
 
     def test_bad_auth(self):
@@ -66,8 +67,11 @@ class TestRackspaceProvider(TestCase):
     def test_nonexistent_zone(self):
         # Non-existent zone doesn't populate anything
         with requests_mock() as mock:
-            mock.get(ANY, status_code=404,
-                     json={'error': "Could not find domain 'unit.tests.'"})
+            mock.get(
+                ANY,
+                status_code=404,
+                json={'error': "Could not find domain 'unit.tests.'"},
+            )
 
             zone = Zone('unit.tests.', [])
             exists = self.provider.populate(zone)
@@ -77,12 +81,19 @@ class TestRackspaceProvider(TestCase):
 
     def test_multipage_populate(self):
         with requests_mock() as mock:
-            mock.get(re.compile('domains$'), status_code=200,
-                     text=LIST_DOMAINS_RESPONSE)
-            mock.get(re.compile('records'), status_code=200,
-                     text=RECORDS_PAGE_1)
-            mock.get(re.compile('records.*offset=3'), status_code=200,
-                     text=RECORDS_PAGE_2)
+            mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
+            mock.get(
+                re.compile('records'), status_code=200, text=RECORDS_PAGE_1
+            )
+            mock.get(
+                re.compile('records.*offset=3'),
+                status_code=200,
+                text=RECORDS_PAGE_2,
+            )
 
             zone = Zone('unit.tests.', [])
             self.provider.populate(zone)
@@ -90,19 +101,26 @@ class TestRackspaceProvider(TestCase):
 
     def test_plan_disappearing_ns_records(self):
         expected = Zone('unit.tests.', [])
-        expected.add_record(Record.new(expected, '', {
-            'type': 'NS',
-            'ttl': 600,
-            'values': ['8.8.8.8.', '9.9.9.9.']
-        }))
-        expected.add_record(Record.new(expected, 'sub', {
-            'type': 'NS',
-            'ttl': 600,
-            'values': ['8.8.8.8.', '9.9.9.9.']
-        }))
+        expected.add_record(
+            Record.new(
+                expected,
+                '',
+                {'type': 'NS', 'ttl': 600, 'values': ['8.8.8.8.', '9.9.9.9.']},
+            )
+        )
+        expected.add_record(
+            Record.new(
+                expected,
+                'sub',
+                {'type': 'NS', 'ttl': 600, 'values': ['8.8.8.8.', '9.9.9.9.']},
+            )
+        )
         with requests_mock() as mock:
-            mock.get(re.compile('domains$'), status_code=200,
-                     text=LIST_DOMAINS_RESPONSE)
+            mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
             mock.get(re.compile('records'), status_code=200, text=EMPTY_TEXT)
 
             plan = self.provider.plan(expected)
@@ -117,30 +135,47 @@ class TestRackspaceProvider(TestCase):
         # expected.add_record(Record.new(expected, 'foo', '1.2.3.4'))
 
         with requests_mock() as list_mock:
-            list_mock.get(re.compile('domains$'), status_code=200,
-                          text=LIST_DOMAINS_RESPONSE)
-            list_mock.get(re.compile('records'), status_code=200,
-                          json={'records': [
-                              {'type': 'A',
-                               'name': 'foo.example.com',
-                               'id': 'A-111111',
-                               'data': '1.2.3.4',
-                               'ttl': 300}]})
+            list_mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
+            list_mock.get(
+                re.compile('records'),
+                status_code=200,
+                json={
+                    'records': [
+                        {
+                            'type': 'A',
+                            'name': 'foo.example.com',
+                            'id': 'A-111111',
+                            'data': '1.2.3.4',
+                            'ttl': 300,
+                        }
+                    ]
+                },
+            )
             plan = self.provider.plan(expected)
             self.assertTrue(list_mock.called)
             self.assertEqual(1, len(plan.changes))
-            self.assertTrue(
-                plan.changes[0].existing.fqdn == 'foo.example.com.')
+            self.assertTrue(plan.changes[0].existing.fqdn == 'foo.example.com.')
 
         with requests_mock() as mock:
+
             def _assert_deleting(request, context):
                 parts = urlparse(request.url)
                 self.assertEqual('id=A-111111', parts.query)
 
-            mock.get(re.compile('domains$'), status_code=200,
-                     text=LIST_DOMAINS_RESPONSE)
-            mock.delete(re.compile('domains/.*/records?.*'), status_code=202,
-                        text=_assert_deleting)
+            mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
+            mock.delete(
+                re.compile('domains/.*/records?.*'),
+                status_code=202,
+                text=_assert_deleting,
+            )
             self.provider.apply(plan)
             self.assertTrue(mock.called)
 
@@ -148,13 +183,18 @@ class TestRackspaceProvider(TestCase):
         expected = Zone('unit.tests.', [])
         for record in data.OtherRecords:
             expected.add_record(
-                Record.new(expected, record['subdomain'], record['data']))
+                Record.new(expected, record['subdomain'], record['data'])
+            )
 
         with requests_mock() as list_mock:
-            list_mock.get(re.compile('domains$'), status_code=200,
-                          text=LIST_DOMAINS_RESPONSE)
-            list_mock.get(re.compile('records'), status_code=200,
-                          json=data.OwnRecords)
+            list_mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
+            list_mock.get(
+                re.compile('records'), status_code=200, json=data.OwnRecords
+            )
             plan = self.provider.plan(expected)
             self.assertTrue(list_mock.called)
             if not data.ExpectChanges:
@@ -168,10 +208,10 @@ class TestRackspaceProvider(TestCase):
                 def _assert_sending_right_body(request, _context):
                     called.add(request.method)
                     if request.method != 'DELETE':
-                        self.assertEqual(request.headers['content-type'],
-                                         'application/json')
-                        self.assertDictEqual(expected,
-                                             json.loads(request.body))
+                        self.assertEqual(
+                            request.headers['content-type'], 'application/json'
+                        )
+                        self.assertDictEqual(expected, json.loads(request.body))
                     else:
                         parts = urlparse(request.url)
                         self.assertEqual(expected, parts.query)
@@ -179,30 +219,38 @@ class TestRackspaceProvider(TestCase):
 
                 return _assert_sending_right_body
 
-            mock.get(re.compile('domains$'), status_code=200,
-                     text=LIST_DOMAINS_RESPONSE)
-            mock.post(re.compile('domains/.*/records$'), status_code=202,
-                      text=make_assert_sending_right_body(
-                          data.ExpectedAdditions))
-            mock.delete(re.compile('domains/.*/records?.*'), status_code=202,
-                        text=make_assert_sending_right_body(
-                            data.ExpectedDeletions))
-            mock.put(re.compile('domains/.*/records$'), status_code=202,
-                     text=make_assert_sending_right_body(data.ExpectedUpdates))
+            mock.get(
+                re.compile('domains$'),
+                status_code=200,
+                text=LIST_DOMAINS_RESPONSE,
+            )
+            mock.post(
+                re.compile('domains/.*/records$'),
+                status_code=202,
+                text=make_assert_sending_right_body(data.ExpectedAdditions),
+            )
+            mock.delete(
+                re.compile('domains/.*/records?.*'),
+                status_code=202,
+                text=make_assert_sending_right_body(data.ExpectedDeletions),
+            )
+            mock.put(
+                re.compile('domains/.*/records$'),
+                status_code=202,
+                text=make_assert_sending_right_body(data.ExpectedUpdates),
+            )
 
             self.provider.apply(plan)
             self.assertTrue(data.ExpectedAdditions is None or "POST" in called)
             self.assertTrue(
-                data.ExpectedDeletions is None or "DELETE" in called)
+                data.ExpectedDeletions is None or "DELETE" in called
+            )
             self.assertTrue(data.ExpectedUpdates is None or "PUT" in called)
 
     def test_apply_no_change_empty(self):
         class TestData(object):
             OtherRecords = []
-            OwnRecords = {
-                "totalEntries": 0,
-                "records": []
-            }
+            OwnRecords = {"totalEntries": 0, "records": []}
             ExpectChanges = False
             ExpectedAdditions = None
             ExpectedDeletions = None
@@ -218,31 +266,35 @@ class TestRackspaceProvider(TestCase):
                     "data": {
                         'type': 'A',
                         'ttl': 300,
-                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6']
-                    }
+                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6'],
+                    },
                 }
             ]
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-333333",
-                    "type": "A",
-                    "data": "1.2.3.6",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-333333",
+                        "type": "A",
+                        "data": "1.2.3.6",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = False
             ExpectedAdditions = None
@@ -256,36 +308,31 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": 'foo',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 300,
-                        'value': '1.2.3.4'
-                    }
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
                 },
                 {
                     "subdomain": 'bar',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 300,
-                        'value': '1.2.3.4'
-                    }
-                }
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
+                },
             ]
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "foo.unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "bar.unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "bar.unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = False
             ExpectedAdditions = None
@@ -299,38 +346,34 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": '',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 300,
-                        'value': '1.2.3.4'
-                    }
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
                 },
                 {
                     "subdomain": 'foo',
                     "data": {
                         'type': 'NS',
                         'ttl': 300,
-                        'value': 'ns.example.com.'
-                    }
-                }
+                        'value': 'ns.example.com.',
+                    },
+                },
             ]
-            OwnRecords = {
-                "totalEntries": 0,
-                "records": []
-            }
+            OwnRecords = {"totalEntries": 0, "records": []}
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "type": "NS",
-                    "data": "ns.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "NS",
+                        "data": "ns.example.com",
+                        "ttl": 300,
+                    },
+                ]
             }
             ExpectedDeletions = None
             ExpectedUpdates = None
@@ -348,8 +391,8 @@ class TestRackspaceProvider(TestCase):
                         'value': {
                             'exchange': 'mail1.example.com.',
                             'priority': 1,
-                        }
-                    }
+                        },
+                    },
                 },
                 {
                     "subdomain": 'foo',
@@ -358,30 +401,30 @@ class TestRackspaceProvider(TestCase):
                         'ttl': 300,
                         'value': {
                             'exchange': 'mail2.example.com.',
-                            'priority': 2
-                        }
-                    }
-                }
+                            'priority': 2,
+                        },
+                    },
+                },
             ]
-            OwnRecords = {
-                "totalEntries": 0,
-                "records": []
-            }
+            OwnRecords = {"totalEntries": 0, "records": []}
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "foo.unit.tests",
-                    "type": "MX",
-                    "data": "mail2.example.com",
-                    "priority": 2,
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "type": "MX",
-                    "data": "mail1.example.com",
-                    "priority": 1,
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "MX",
+                        "data": "mail2.example.com",
+                        "priority": 2,
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "type": "MX",
+                        "data": "mail1.example.com",
+                        "priority": 1,
+                        "ttl": 300,
+                    },
+                ]
             }
             ExpectedDeletions = None
             ExpectedUpdates = None
@@ -396,50 +439,53 @@ class TestRackspaceProvider(TestCase):
                     "data": {
                         'type': 'A',
                         'ttl': 300,
-                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6']
-                    }
+                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6'],
+                    },
                 },
                 {
                     "subdomain": 'foo',
                     "data": {
                         'type': 'NS',
                         'ttl': 300,
-                        'values': ['ns1.example.com.', 'ns2.example.com.']
-                    }
-                }
+                        'values': ['ns1.example.com.', 'ns2.example.com.'],
+                    },
+                },
             ]
-            OwnRecords = {
-                "totalEntries": 0,
-                "records": []
-            }
+            OwnRecords = {"totalEntries": 0, "records": []}
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.6",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "type": "NS",
-                    "data": "ns1.example.com",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "type": "NS",
-                    "data": "ns2.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.6",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "NS",
+                        "data": "ns1.example.com",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "NS",
+                        "data": "ns2.example.com",
+                        "ttl": 300,
+                    },
+                ]
             }
             ExpectedDeletions = None
             ExpectedUpdates = None
@@ -448,50 +494,47 @@ class TestRackspaceProvider(TestCase):
 
     def test_apply_multiple_additions_namespaced(self):
         class TestData(object):
-            OtherRecords = [{
-                "subdomain": 'foo',
-                "data": {
-                    'type': 'A',
-                    'ttl': 300,
-                    'value': '1.2.3.4'
-                }
-            }, {
-                "subdomain": 'bar',
-                "data": {
-                    'type': 'A',
-                    'ttl': 300,
-                    'value': '1.2.3.4'
-                }
-            }, {
-                "subdomain": 'foo',
-                "data": {
-                    'type': 'NS',
-                    'ttl': 300,
-                    'value': 'ns.example.com.'
-                }
-            }]
-            OwnRecords = {
-                "totalEntries": 0,
-                "records": []
-            }
+            OtherRecords = [
+                {
+                    "subdomain": 'foo',
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
+                },
+                {
+                    "subdomain": 'bar',
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
+                },
+                {
+                    "subdomain": 'foo',
+                    "data": {
+                        'type': 'NS',
+                        'ttl': 300,
+                        'value': 'ns.example.com.',
+                    },
+                },
+            ]
+            OwnRecords = {"totalEntries": 0, "records": []}
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "bar.unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "type": "NS",
-                    "data": "ns.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "bar.unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "type": "NS",
+                        "data": "ns.example.com",
+                        "ttl": 300,
+                    },
+                ]
             }
             ExpectedDeletions = None
             ExpectedUpdates = None
@@ -503,19 +546,22 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = []
             OwnRecords = {
                 "totalEntries": 1,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "id": "NS-111111",
-                    "type": "NS",
-                    "data": "ns.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "NS-111111",
+                        "type": "NS",
+                        "data": "ns.example.com",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
@@ -529,51 +575,54 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": '',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 300,
-                        'value': '1.2.3.5'
-                    }
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.5'},
                 }
             ]
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-333333",
-                    "type": "A",
-                    "data": "1.2.3.6",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "id": "NS-111111",
-                    "type": "NS",
-                    "data": "ns.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-333333",
+                        "type": "A",
+                        "data": "1.2.3.6",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "NS-111111",
+                        "type": "NS",
+                        "data": "ns.example.com",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
             ExpectedDeletions = "id=A-111111&id=A-333333&id=NS-111111"
             ExpectedUpdates = {
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-222222",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-222222",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    }
+                ]
             }
 
         return self._test_apply_with_data(TestData)
@@ -583,34 +632,34 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": '',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 300,
-                        'value': '1.2.3.4'
-                    }
+                    "data": {'type': 'A', 'ttl': 300, 'value': '1.2.3.4'},
                 }
             ]
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "foo.unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }, {
-                    "name": "bar.unit.tests",
-                    "id": "A-333333",
-                    "type": "A",
-                    "data": "1.2.3.6",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "bar.unit.tests",
+                        "id": "A-333333",
+                        "type": "A",
+                        "data": "1.2.3.6",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
@@ -624,13 +673,15 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = []
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "foo.unit.tests",
-                    "id": "CNAME-111111",
-                    "type": "CNAME",
-                    "data": "a.example.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "CNAME-111111",
+                        "type": "CNAME",
+                        "data": "a.example.com",
+                        "ttl": 300,
+                    }
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
@@ -644,33 +695,33 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": '',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 3600,
-                        'value': '1.2.3.4'
-                    }
+                    "data": {'type': 'A', 'ttl': 3600, 'value': '1.2.3.4'},
                 }
             ]
             OwnRecords = {
                 "totalEntries": 1,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    }
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
             ExpectedDeletions = None
             ExpectedUpdates = {
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "data": "1.2.3.4",
-                    "ttl": 3600
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "data": "1.2.3.4",
+                        "ttl": 3600,
+                    }
+                ]
             }
 
         return self._test_apply_with_data(TestData)
@@ -680,31 +731,31 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": '',
-                    "data": {
-                        'type': 'TXT',
-                        'ttl': 300,
-                        'value': 'othervalue'
-                    }
+                    "data": {'type': 'TXT', 'ttl': 300, 'value': 'othervalue'},
                 }
             ]
             OwnRecords = {
                 "totalEntries": 1,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "TXT-111111",
-                    "type": "TXT",
-                    "data": "somevalue",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "TXT-111111",
+                        "type": "TXT",
+                        "data": "somevalue",
+                        "ttl": 300,
+                    }
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "unit.tests",
-                    "type": "TXT",
-                    "data": "othervalue",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "type": "TXT",
+                        "data": "othervalue",
+                        "ttl": 300,
+                    }
+                ]
             }
             ExpectedDeletions = 'id=TXT-111111'
             ExpectedUpdates = None
@@ -719,30 +770,34 @@ class TestRackspaceProvider(TestCase):
                     "data": {
                         'type': 'MX',
                         'ttl': 300,
-                        'value': {u'priority': 50, u'exchange': 'mx.test.com.'}
-                    }
+                        'value': {u'priority': 50, u'exchange': 'mx.test.com.'},
+                    },
                 }
             ]
             OwnRecords = {
                 "totalEntries": 1,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "MX-111111",
-                    "type": "MX",
-                    "priority": 20,
-                    "data": "mx.test.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "MX-111111",
+                        "type": "MX",
+                        "priority": 20,
+                        "data": "mx.test.com",
+                        "ttl": 300,
+                    }
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = {
-                "records": [{
-                    "name": "unit.tests",
-                    "type": "MX",
-                    "priority": 50,
-                    "data": "mx.test.com",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "type": "MX",
+                        "priority": 50,
+                        "data": "mx.test.com",
+                        "ttl": 300,
+                    }
+                ]
             }
             ExpectedDeletions = 'id=MX-111111'
             ExpectedUpdates = None
@@ -757,52 +812,60 @@ class TestRackspaceProvider(TestCase):
                     "data": {
                         'type': 'A',
                         'ttl': 3600,
-                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6']
-                    }
+                        'values': ['1.2.3.4', '1.2.3.5', '1.2.3.6'],
+                    },
                 }
             ]
             OwnRecords = {
                 "totalEntries": 3,
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.5",
-                    "ttl": 300
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-333333",
-                    "type": "A",
-                    "data": "1.2.3.6",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.5",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-333333",
+                        "type": "A",
+                        "data": "1.2.3.6",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
             ExpectedDeletions = None
             ExpectedUpdates = {
-                "records": [{
-                    "name": "unit.tests",
-                    "id": "A-111111",
-                    "data": "1.2.3.4",
-                    "ttl": 3600
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-222222",
-                    "data": "1.2.3.5",
-                    "ttl": 3600
-                }, {
-                    "name": "unit.tests",
-                    "id": "A-333333",
-                    "data": "1.2.3.6",
-                    "ttl": 3600
-                }]
+                "records": [
+                    {
+                        "name": "unit.tests",
+                        "id": "A-111111",
+                        "data": "1.2.3.4",
+                        "ttl": 3600,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-222222",
+                        "data": "1.2.3.5",
+                        "ttl": 3600,
+                    },
+                    {
+                        "name": "unit.tests",
+                        "id": "A-333333",
+                        "data": "1.2.3.6",
+                        "ttl": 3600,
+                    },
+                ]
             }
 
         return self._test_apply_with_data(TestData)
@@ -812,52 +875,50 @@ class TestRackspaceProvider(TestCase):
             OtherRecords = [
                 {
                     "subdomain": 'foo',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 3600,
-                        'value': '1.2.3.4'
-                    }
+                    "data": {'type': 'A', 'ttl': 3600, 'value': '1.2.3.4'},
                 },
                 {
                     "subdomain": 'bar',
-                    "data": {
-                        'type': 'A',
-                        'ttl': 3600,
-                        'value': '1.2.3.4'
-                    }
-                }
+                    "data": {'type': 'A', 'ttl': 3600, 'value': '1.2.3.4'},
+                },
             ]
             OwnRecords = {
                 "totalEntries": 2,
-                "records": [{
-                    "name": "foo.unit.tests",
-                    "id": "A-111111",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }, {
-                    "name": "bar.unit.tests",
-                    "id": "A-222222",
-                    "type": "A",
-                    "data": "1.2.3.4",
-                    "ttl": 300
-                }]
+                "records": [
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "A-111111",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                    {
+                        "name": "bar.unit.tests",
+                        "id": "A-222222",
+                        "type": "A",
+                        "data": "1.2.3.4",
+                        "ttl": 300,
+                    },
+                ],
             }
             ExpectChanges = True
             ExpectedAdditions = None
             ExpectedDeletions = None
             ExpectedUpdates = {
-                "records": [{
-                    "name": "bar.unit.tests",
-                    "id": "A-222222",
-                    "data": "1.2.3.4",
-                    "ttl": 3600
-                }, {
-                    "name": "foo.unit.tests",
-                    "id": "A-111111",
-                    "data": "1.2.3.4",
-                    "ttl": 3600
-                }]
+                "records": [
+                    {
+                        "name": "bar.unit.tests",
+                        "id": "A-222222",
+                        "data": "1.2.3.4",
+                        "ttl": 3600,
+                    },
+                    {
+                        "name": "foo.unit.tests",
+                        "id": "A-111111",
+                        "data": "1.2.3.4",
+                        "ttl": 3600,
+                    },
+                ]
             }
 
         return self._test_apply_with_data(TestData)
