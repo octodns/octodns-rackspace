@@ -42,12 +42,14 @@ def unescape_semicolon(s):
 class RackspaceProvider(BaseProvider):
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
-    SUPPORTS = set(('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF',
-                    'TXT'))
+    SUPPORTS = set(
+        ('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF', 'TXT')
+    )
     TIMEOUT = 5
 
-    def __init__(self, id, username, api_key, ratelimit_delay=0.0, *args,
-                 **kwargs):
+    def __init__(
+        self, id, username, api_key, ratelimit_delay=0.0, *args, **kwargs
+    ):
         self.log = logging.getLogger(f'RackspaceProvider[{id}]')
         super(RackspaceProvider, self).__init__(id, *args, **kwargs)
 
@@ -65,14 +67,22 @@ class RackspaceProvider(BaseProvider):
         self._id_map = {}
 
     def _get_auth_token(self, username, api_key):
-        ret = post('https://identity.api.rackspacecloud.com/v2.0/tokens',
-                   json={"auth": {
-                       "RAX-KSKEY:apiKeyCredentials": {"username": username,
-                                                       "apiKey": api_key}}},
-                   )
-        cloud_dns_endpoint = \
-            [x for x in ret.json()['access']['serviceCatalog'] if
-             x['name'] == 'cloudDNS'][0]['endpoints'][0]['publicURL']
+        ret = post(
+            'https://identity.api.rackspacecloud.com/v2.0/tokens',
+            json={
+                "auth": {
+                    "RAX-KSKEY:apiKeyCredentials": {
+                        "username": username,
+                        "apiKey": api_key,
+                    }
+                }
+            },
+        )
+        cloud_dns_endpoint = [
+            x
+            for x in ret.json()['access']['serviceCatalog']
+            if x['name'] == 'cloudDNS'
+        ][0]['endpoints'][0]['publicURL']
         return ret.json()['access']['token']['id'], cloud_dns_endpoint
 
     def _get_zone_id_for(self, zone):
@@ -84,8 +94,9 @@ class RackspaceProvider(BaseProvider):
         url = f'{self.dns_endpoint}/{path}'
 
         if pagination_key:
-            resp = self._paginated_request_for_url(method, url, data,
-                                                   pagination_key)
+            resp = self._paginated_request_for_url(
+                method, url, data, pagination_key
+            )
         else:
             resp = self._request_for_url(method, url, data)
         time.sleep(self.ratelimit_delay)
@@ -105,12 +116,16 @@ class RackspaceProvider(BaseProvider):
         resp.raise_for_status()
         acc.extend(resp.json()[pagination_key])
 
-        next_page = [x for x in resp.json().get('links', []) if
-                     x['rel'] == 'next']
+        next_page = [
+            x for x in resp.json().get('links', []) if x['rel'] == 'next'
+        ]
         if next_page:
             url = next_page[0]['href']
-            acc.extend(self._paginated_request_for_url(method, url, data,
-                                                       pagination_key))
+            acc.extend(
+                self._paginated_request_for_url(
+                    method, url, data, pagination_key
+                )
+            )
             return acc
         else:
             return acc
@@ -132,7 +147,7 @@ class RackspaceProvider(BaseProvider):
         return {
             'type': rrset[0]['type'],
             'values': [r['data'] for r in rrset],
-            'ttl': rrset[0]['ttl']
+            'ttl': rrset[0]['ttl'],
         }
 
     _data_for_A = _data_for_multiple
@@ -142,14 +157,14 @@ class RackspaceProvider(BaseProvider):
         return {
             'type': rrset[0]['type'],
             'values': [add_trailing_dot(r['data']) for r in rrset],
-            'ttl': rrset[0]['ttl']
+            'ttl': rrset[0]['ttl'],
         }
 
     def _data_for_single(self, record):
         return {
             'type': record[0]['type'],
             'value': add_trailing_dot(record[0]['data']),
-            'ttl': record[0]['ttl']
+            'ttl': record[0]['ttl'],
         }
 
     _data_for_ALIAS = _data_for_single
@@ -160,7 +175,7 @@ class RackspaceProvider(BaseProvider):
         return {
             'type': rrset[0]['type'],
             'values': [escape_semicolon(r['data']) for r in rrset],
-            'ttl': rrset[0]['ttl']
+            'ttl': rrset[0]['ttl'],
         }
 
     _data_for_SPF = _data_for_textual
@@ -169,14 +184,16 @@ class RackspaceProvider(BaseProvider):
     def _data_for_MX(self, rrset):
         values = []
         for record in rrset:
-            values.append({
-                'priority': record['priority'],
-                'value': add_trailing_dot(record['data']),
-            })
+            values.append(
+                {
+                    'priority': record['priority'],
+                    'value': add_trailing_dot(record['data']),
+                }
+            )
         return {
             'type': rrset[0]['type'],
             'values': values,
-            'ttl': rrset[0]['ttl']
+            'ttl': rrset[0]['ttl'],
         }
 
     def populate(self, zone, target=False, lenient=False):
@@ -184,8 +201,9 @@ class RackspaceProvider(BaseProvider):
         resp_data = None
         try:
             domain_id = self._get_zone_id_for(zone)
-            resp_data = self._request('GET', f'domains/{domain_id}/records',
-                                      pagination_key='records')
+            resp_data = self._request(
+                'GET', f'domains/{domain_id}/records', pagination_key='records'
+            )
             self.log.debug('populate:   loaded')
         except HTTPError as e:
             if e.response.status_code == 401:
@@ -204,13 +222,15 @@ class RackspaceProvider(BaseProvider):
                 for raw_record_name, record_set in records_of_type.items():
                     data_for = getattr(self, f'_data_for_{record_type}')
                     record_name = zone.hostname_from_fqdn(raw_record_name)
-                    record = Record.new(zone, record_name,
-                                        data_for(record_set),
-                                        source=self)
+                    record = Record.new(
+                        zone, record_name, data_for(record_set), source=self
+                    )
                     zone.add_record(record, lenient=lenient)
 
-        self.log.info('populate:   found %s records, exists=True',
-                      len(zone.records) - before)
+        self.log.info(
+            'populate:   found %s records, exists=True',
+            len(zone.records) - before,
+        )
         return True
 
     def _group_records(self, all_records):
@@ -265,7 +285,7 @@ class RackspaceProvider(BaseProvider):
             'type': record._type,
             'data': remove_trailing_dot(value.exchange),
             'ttl': max(record.ttl, 300),
-            'priority': value.preference
+            'priority': value.preference,
         }
 
     def _get_values(self, record):
@@ -275,8 +295,9 @@ class RackspaceProvider(BaseProvider):
             return [record.value]
 
     def _mod_Create(self, change):
-        return self._create_given_change_values(change,
-                                                self._get_values(change.new))
+        return self._create_given_change_values(
+            change, self._get_values(change.new)
+        )
 
     def _create_given_change_values(self, change, values):
         transformer = getattr(self, f"_record_for_{change.new._type}")
@@ -312,8 +333,9 @@ class RackspaceProvider(BaseProvider):
         return create_out, update_out, delete_out
 
     def _mod_Delete(self, change):
-        return self._delete_given_change_values(change, self._get_values(
-            change.existing))
+        return self._delete_given_change_values(
+            change, self._get_values(change.existing)
+        )
 
     def _delete_given_change_values(self, change, values):
         transformer = getattr(self, f"_record_for_{change.existing._type}")
@@ -328,8 +350,9 @@ class RackspaceProvider(BaseProvider):
     def _apply(self, plan):
         desired = plan.desired
         changes = plan.changes
-        self.log.debug('_apply: zone=%s, len(changes)=%d', desired.name,
-                       len(changes))
+        self.log.debug(
+            '_apply: zone=%s, len(changes)=%d', desired.name, len(changes)
+        )
 
         # Creates, updates, and deletes are processed by different endpoints
         # and are broken out by record-set entries; pre-process everything
@@ -342,8 +365,7 @@ class RackspaceProvider(BaseProvider):
             if change.__class__.__name__ == 'Create':
                 creates += self._mod_Create(change)
             elif change.__class__.__name__ == 'Update':
-                add_creates, add_updates, add_deletes = self._mod_Update(
-                    change)
+                add_creates, add_updates, add_deletes = self._mod_Update(change)
                 creates += add_creates
                 updates += add_updates
                 deletes += add_deletes
