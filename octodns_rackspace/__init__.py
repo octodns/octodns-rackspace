@@ -51,7 +51,7 @@ class RackspaceProvider(BaseProvider):
         self, id, username, api_key, ratelimit_delay=0.0, *args, **kwargs
     ):
         self.log = logging.getLogger(f'RackspaceProvider[{id}]')
-        super(RackspaceProvider, self).__init__(id, *args, **kwargs)
+        super().__init__(id, *args, **kwargs)
 
         auth_token, dns_endpoint = self._get_auth_token(username, api_key)
         self.dns_endpoint = dns_endpoint
