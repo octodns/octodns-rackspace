@@ -40,7 +40,7 @@ class TestRackspaceProvider(TestCase):
         with requests_mock() as mock:
             mock.post(ANY, status_code=200, text=AUTH_RESPONSE)
             self.provider = RackspaceProvider(
-                'identity', 'test', 'api-key', '0'
+                'identity', 'test', 'api-key', '0', strict_supports=False
             )
             self.assertTrue(mock.called_once)
 
