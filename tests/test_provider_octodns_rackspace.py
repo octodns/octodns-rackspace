@@ -4,11 +4,12 @@
 
 import json
 import re
-from urllib.parse import urlparse
 from unittest import TestCase
+from urllib.parse import urlparse
 
 from requests import HTTPError
-from requests_mock import ANY, mock as requests_mock
+from requests_mock import ANY
+from requests_mock import mock as requests_mock
 
 from octodns.record import Record
 from octodns.zone import Zone
