@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from requests import HTTPError, Session, post
 
+from octodns import __VERSION__ as octodns_version
 from octodns.provider.base import BaseProvider
 from octodns.record import Record
 
@@ -60,7 +61,12 @@ class RackspaceProvider(BaseProvider):
         self.ratelimit_delay = float(ratelimit_delay)
 
         sess = Session()
-        sess.headers.update({'X-Auth-Token': auth_token})
+        sess.headers.update(
+            {
+                'X-Auth-Token': auth_token,
+                'User-Agent': f'octodns/{octodns_version} octodns-rackspace/{__VERSION__}',
+            }
+        )
         self._sess = sess
 
         # Map record type, name, and data to an id when populating so that
