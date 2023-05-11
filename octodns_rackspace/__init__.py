@@ -44,19 +44,18 @@ def unescape_semicolon(s):
 class RackspaceProvider(BaseProvider):
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
-    SUPPORTS = set(
-        ('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF', 'TXT')
-    )
-    TIMEOUT = 5
+    SUPPORTS = set(('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF',
+                    'TXT'))
 
-    def __init__(
-        self, id, username, api_key, ratelimit_delay=0.0, *args, **kwargs
-    ):
+    def __init__(self, id, username, api_key, ratelimit_delay=0.0, default_timeout=10, *args,
+                 **kwargs):
         self.log = logging.getLogger(f'RackspaceProvider[{id}]')
         super().__init__(id, *args, **kwargs)
 
         auth_token, dns_endpoint = self._get_auth_token(username, api_key)
         self.dns_endpoint = dns_endpoint
+
+        self.default_timeout = default_timeout
 
         self.ratelimit_delay = float(ratelimit_delay)
 
@@ -110,7 +109,7 @@ class RackspaceProvider(BaseProvider):
         return resp
 
     def _request_for_url(self, method, url, data):
-        resp = self._sess.request(method, url, json=data, timeout=self.TIMEOUT)
+        resp = self._sess.request(method, url, json=data, timeout=self.default_timeout)
         self.log.debug('_request:   status=%d', resp.status_code)
         resp.raise_for_status()
         return resp
@@ -118,7 +117,7 @@ class RackspaceProvider(BaseProvider):
     def _paginated_request_for_url(self, method, url, data, pagination_key):
         acc = []
 
-        resp = self._sess.request(method, url, json=data, timeout=self.TIMEOUT)
+        resp = self._sess.request(method, url, json=data, timeout=self.default_timeout)
         self.log.debug('_request:   status=%d', resp.status_code)
         resp.raise_for_status()
         acc.extend(resp.json()[pagination_key])
