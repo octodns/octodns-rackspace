@@ -18,7 +18,7 @@ Pinning specific versions or SHAs is recommended to avoid unplanned upgrades.
 
 ```
 # Start with the latest versions and don't just copy what's here
-octodns==0.9.14
+octodns==0.9.21
 octodns-rackspace==0.0.1
 ```
 
@@ -40,6 +40,8 @@ providers:
     username: env/RACKSPACE_USERNAME
     # The api key that grants access for that user (required)
     api_key: env/RACKSPACE_API_KEY
+    # The timeout in seconds for the API calls to Rackspace (optional)
+    timeout: 10
 ```
 
 ### Support Information

@@ -54,7 +54,7 @@ class RackspaceProvider(BaseProvider):
         username,
         api_key,
         ratelimit_delay=0.0,
-        default_timeout=10,
+        timeout=5,
         *args,
         **kwargs,
     ):
@@ -64,7 +64,7 @@ class RackspaceProvider(BaseProvider):
         auth_token, dns_endpoint = self._get_auth_token(username, api_key)
         self.dns_endpoint = dns_endpoint
 
-        self.default_timeout = default_timeout
+        self.default_timeout = timeout
 
         self.ratelimit_delay = float(ratelimit_delay)
 
