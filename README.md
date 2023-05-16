@@ -40,8 +40,8 @@ providers:
     username: env/RACKSPACE_USERNAME
     # The api key that grants access for that user (required)
     api_key: env/RACKSPACE_API_KEY
-    # The timeout in seconds for the API calls to Rackspace (optional)
-    timeout: 10
+    # The timeout in seconds for the API calls to Rackspace (optional, default 10)
+    timeout: 15
 ```
 
 ### Support Information
