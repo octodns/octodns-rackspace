@@ -47,16 +47,24 @@ class RackspaceProvider(BaseProvider):
     SUPPORTS = set(
         ('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF', 'TXT')
     )
-    TIMEOUT = 5
 
     def __init__(
-        self, id, username, api_key, ratelimit_delay=0.0, *args, **kwargs
+        self,
+        id,
+        username,
+        api_key,
+        ratelimit_delay=0.0,
+        timeout=10,
+        *args,
+        **kwargs,
     ):
         self.log = logging.getLogger(f'RackspaceProvider[{id}]')
         super().__init__(id, *args, **kwargs)
 
         auth_token, dns_endpoint = self._get_auth_token(username, api_key)
         self.dns_endpoint = dns_endpoint
+
+        self.timeout = timeout
 
         self.ratelimit_delay = float(ratelimit_delay)
 
@@ -110,7 +118,7 @@ class RackspaceProvider(BaseProvider):
         return resp
 
     def _request_for_url(self, method, url, data):
-        resp = self._sess.request(method, url, json=data, timeout=self.TIMEOUT)
+        resp = self._sess.request(method, url, json=data, timeout=self.timeout)
         self.log.debug('_request:   status=%d', resp.status_code)
         resp.raise_for_status()
         return resp
@@ -118,7 +126,7 @@ class RackspaceProvider(BaseProvider):
     def _paginated_request_for_url(self, method, url, data, pagination_key):
         acc = []
 
-        resp = self._sess.request(method, url, json=data, timeout=self.TIMEOUT)
+        resp = self._sess.request(method, url, json=data, timeout=self.timeout)
         self.log.debug('_request:   status=%d', resp.status_code)
         resp.raise_for_status()
         acc.extend(resp.json()[pagination_key])
