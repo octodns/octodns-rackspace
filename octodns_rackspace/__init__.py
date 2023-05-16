@@ -54,7 +54,7 @@ class RackspaceProvider(BaseProvider):
         username,
         api_key,
         ratelimit_delay=0.0,
-        timeout=5,
+        timeout=10,
         *args,
         **kwargs,
     ):
