@@ -119,7 +119,7 @@ class RackspaceProvider(BaseProvider):
 
     def _request_for_url(self, method, url, data):
         resp = self._sess.request(
-            method, url, json=data, timeout=self.default_timeout
+            method, url, json=data, timeout=self.timeout
         )
         self.log.debug('_request:   status=%d', resp.status_code)
         resp.raise_for_status()
