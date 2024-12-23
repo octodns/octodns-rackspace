@@ -45,9 +45,7 @@ def unescape_semicolon(s):
 class RackspaceProvider(BaseProvider):
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
-    SUPPORTS = set(
-        ('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'SPF', 'TXT')
-    )
+    SUPPORTS = set(('A', 'AAAA', 'ALIAS', 'CNAME', 'MX', 'NS', 'PTR', 'TXT'))
 
     def __init__(
         self,
@@ -194,7 +192,6 @@ class RackspaceProvider(BaseProvider):
             'ttl': rrset[0]['ttl'],
         }
 
-    _data_for_SPF = _data_for_textual
     _data_for_TXT = _data_for_textual
 
     def _data_for_MX(self, rrset):
@@ -291,7 +288,6 @@ class RackspaceProvider(BaseProvider):
             'ttl': max(record.ttl, 300),
         }
 
-    _record_for_SPF = _record_for_textual
     _record_for_TXT = _record_for_textual
 
     @staticmethod
